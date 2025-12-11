@@ -14,8 +14,46 @@ body {
 h1 {
   font-size: 18px;
   font-weight: 600;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   color: #1a73e8;
+}
+
+.sort-status {
+  background: white;
+  border: 1px solid #e8eaed;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.status-label {
+  color: #5f6368;
+  font-weight: 500;
+}
+
+.status-value {
+  font-weight: 600;
+  color: #202124;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-value::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #dadce0;
+}
+
+.status-value.sorted::before {
+  background-color: #1a73e8;
 }
 
 .controls {
@@ -28,7 +66,7 @@ h1 {
 .btn {
   padding: 10px 16px;
   border: none;
-  border-radius: 4px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;

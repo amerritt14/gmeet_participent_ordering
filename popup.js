@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const restoreBtn = document.getElementById('restoreBtn');
   const status = document.getElementById('status');
   const participantList = document.getElementById('participantList');
+  const sortIndicator = document.getElementById('sortIndicator');
 
   // Check if we're on a Google Meet page
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Wait a bit for the DOM to update, then refresh the list
             setTimeout(() => {
               loadParticipants();
+              updateSortStatus();
             }, 400);
           } else {
             showStatus('Failed to sort participants', 'error');
@@ -49,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Wait a bit for the DOM to update, then refresh the list
             setTimeout(() => {
               loadParticipants();
+              updateSortStatus();
             }, 400);
           } else {
             showStatus('Failed to restore order', 'error');
@@ -60,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load and display participants
   loadParticipants();
+  updateSortStatus();
 
   function loadParticipants() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -78,6 +82,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (response && response.participants) {
             displayParticipants(response.participants);
+          }
+        }
+      );
+    });
+  }
+
+  function updateSortStatus() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0].url.includes('meet.google.com')) {
+        return;
+      }
+
+      chrome.tabs.sendMessage(
+        tabs[0].id,
+        { action: 'getSortState' },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Error:', chrome.runtime.lastError);
+            return;
+          }
+
+          if (response) {
+            if (response.isSorted) {
+              sortIndicator.textContent = 'Sorted by last name';
+              sortIndicator.classList.add('sorted');
+            } else {
+              sortIndicator.textContent = 'Default order';
+              sortIndicator.classList.remove('sorted');
+            }
           }
         }
       );

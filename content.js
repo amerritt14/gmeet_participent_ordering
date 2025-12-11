@@ -13,6 +13,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const participants = extractParticipants();
     console.log('Extracted participants:', participants);
     sendResponse({ participants: participants });
+  } else if (request.action === 'getSortState') {
+    sendResponse({ isSorted: isSorted });
   } else if (request.action === 'sortByLastName') {
     sortParticipantsByLastName();
     sendResponse({ success: true });
