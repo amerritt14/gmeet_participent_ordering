@@ -160,18 +160,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function displayParticipants(participants) {
+    // Clear existing content
+    participantList.textContent = '';
+
     if (participants.length === 0) {
-      participantList.innerHTML = '<p style="color: #5f6368; font-size: 13px;">No participants found. Make sure the participant list is visible in Google Meet.</p>';
+      const message = document.createElement('p');
+      message.style.color = '#5f6368';
+      message.style.fontSize = '13px';
+      message.textContent = 'No participants found. Make sure the participant list is visible in Google Meet.';
+      participantList.appendChild(message);
       return;
     }
 
-    const html = `
-      <h3>Current Participants (${participants.length})</h3>
-      <ul>
-        ${participants.map(p => `<li>${p.name}</li>`).join('')}
-      </ul>
-    `;
-    participantList.innerHTML = html;
+    // Create heading
+    const heading = document.createElement('h3');
+    heading.textContent = `Current Participants (${participants.length})`;
+    participantList.appendChild(heading);
+
+    // Create list
+    const ul = document.createElement('ul');
+    participants.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = p.name;
+      ul.appendChild(li);
+    });
+    participantList.appendChild(ul);
   }
 
   function showStatus(message, type) {
