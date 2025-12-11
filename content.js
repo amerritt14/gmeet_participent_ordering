@@ -4,6 +4,8 @@ console.log('Google Meet Participant Sorter loaded');
 // Store original participant order
 let originalOrder = [];
 let isSorted = false;
+let participantObserver = null;
+let observedContainer = null;
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -200,16 +202,15 @@ function sortParticipantsByLastName() {
     // Get the parent container
     const parent = participants[0].element.parentNode;
 
-    // Create a document fragment to minimize reflows
-    const fragment = document.createDocumentFragment();
-
     // Temporarily store all participant elements
     const allChildren = Array.from(parent.children);
     const participantSet = new Set(participants.map(p => p.element));
     const nonParticipants = allChildren.filter(child => !participantSet.has(child));
 
-    // Clear the parent
-    parent.innerHTML = '';
+    // Remove all children but keep the elements in memory
+    while (parent.firstChild) {
+      parent.removeChild(parent.firstChild);
+    }
 
     // Add sorted participants
     sorted.forEach((participant) => {
@@ -223,6 +224,9 @@ function sortParticipantsByLastName() {
 
     isSorted = true;
     console.log('Participants sorted by last name:', sorted.map(p => p.name));
+
+    // Start observing for participant changes
+    startObservingParticipants(parent);
   }, 300); // Wait 300ms for panel to open
 }
 
@@ -273,8 +277,10 @@ function restoreOriginalOrder() {
   const participantSet = new Set(sortedOriginal.map(o => o.element));
   const nonParticipants = allChildren.filter(child => !participantSet.has(child));
 
-  // Clear and rebuild in original order
-  parent.innerHTML = '';
+  // Remove all children but keep the elements in memory
+  while (parent.firstChild) {
+    parent.removeChild(parent.firstChild);
+  }
 
   sortedOriginal.forEach(({ element }) => {
     parent.appendChild(element);
@@ -289,4 +295,123 @@ function restoreOriginalOrder() {
   originalOrder = [];
   isSorted = false;
   console.log('Original order restored');
+
+  // Stop observing when not in sorted mode
+  stopObservingParticipants();
+}
+
+function startObservingParticipants(container) {
+  // Stop any existing observer
+  stopObservingParticipants();
+
+  if (!container) {
+    console.warn('No container to observe');
+    return;
+  }
+
+  observedContainer = container;
+
+  // Create a MutationObserver to watch for new participants
+  participantObserver = new MutationObserver((mutations) => {
+    // Debounce the re-sort to avoid too many updates
+    clearTimeout(participantObserver.timeout);
+    participantObserver.timeout = setTimeout(() => {
+      if (isSorted) {
+        console.log('Participant list changed, re-sorting...');
+        // Don't call sortParticipantsByLastName as it will create a new timeout
+        // Instead, directly perform the sort
+        performSort();
+      }
+    }, 500); // Wait 500ms after last change before re-sorting
+  });
+
+  // Observe the container for child additions/removals
+  participantObserver.observe(container, {
+    childList: true,
+    subtree: true
+  });
+
+  console.log('Started observing participant changes');
+}
+
+function stopObservingParticipants() {
+  if (participantObserver) {
+    participantObserver.disconnect();
+    participantObserver = null;
+    observedContainer = null;
+    console.log('Stopped observing participant changes');
+  }
+}
+
+function performSort() {
+  const participants = extractParticipants();
+
+  if (participants.length === 0) {
+    console.warn('No participants found to sort');
+    return;
+  }
+
+  console.log('Re-sorting participants:', participants.map(p => `${p.lastName}, ${p.firstName}`));
+
+  // Update original order with any new participants
+  const currentParticipantSet = new Set(originalOrder.map(o => o.element));
+  participants.forEach(p => {
+    if (!currentParticipantSet.has(p.element)) {
+      // New participant - add to original order
+      const parent = p.element.parentNode;
+      const children = Array.from(parent.children);
+      const index = children.indexOf(p.element);
+      originalOrder.push({
+        element: p.element,
+        parent: parent,
+        originalIndex: index
+      });
+    }
+  });
+
+  // Sort by last name, then first name
+  const sorted = [...participants].sort((a, b) => {
+    const lastNameCompare = a.lastName.localeCompare(b.lastName);
+    if (lastNameCompare !== 0) return lastNameCompare;
+    return a.firstName.localeCompare(b.firstName);
+  });
+
+  // Get the parent container
+  const parent = participants[0].element.parentNode;
+
+  // Temporarily disconnect observer to avoid triggering during our changes
+  const wasObserving = participantObserver !== null;
+  if (wasObserving) {
+    participantObserver.disconnect();
+  }
+
+  // Temporarily store all participant elements
+  const allChildren = Array.from(parent.children);
+  const participantSet = new Set(participants.map(p => p.element));
+  const nonParticipants = allChildren.filter(child => !participantSet.has(child));
+
+  // Remove all children but keep the elements in memory
+  while (parent.firstChild) {
+    parent.removeChild(parent.firstChild);
+  }
+
+  // Add sorted participants
+  sorted.forEach((participant) => {
+    parent.appendChild(participant.element);
+  });
+
+  // Re-add any non-participant elements that were there
+  nonParticipants.forEach(element => {
+    parent.appendChild(element);
+  });
+
+  console.log('Participants re-sorted:', sorted.map(p => p.name));
+
+  // Reconnect observer
+  if (wasObserving) {
+    participantObserver.observe(parent, {
+      childList: true,
+      subtree: true
+    });
+  }
 }
