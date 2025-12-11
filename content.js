@@ -4,6 +4,7 @@ console.log('Google Meet Participant Sorter loaded');
 // Store original participant order
 let originalOrder = [];
 let isSorted = false;
+let isAscending = true; // true = A-Z, false = Z-A
 let participantObserver = null;
 let observedContainer = null;
 
@@ -14,9 +15,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('Extracted participants:', participants);
     sendResponse({ participants: participants });
   } else if (request.action === 'getSortState') {
-    sendResponse({ isSorted: isSorted });
+    sendResponse({ isSorted: isSorted, isAscending: isAscending });
   } else if (request.action === 'sortByLastName') {
-    sortParticipantsByLastName();
+    const ascending = request.ascending !== undefined ? request.ascending : true;
+    sortParticipantsByLastName(ascending);
     sendResponse({ success: true });
   } else if (request.action === 'restoreOrder') {
     restoreOriginalOrder();
@@ -157,9 +159,12 @@ function parseLastName(fullName) {
   return parts[0]; // If only one name, use it as last name too
 }
 
-function sortParticipantsByLastName() {
+function sortParticipantsByLastName(ascending = true) {
   // Try to open the participant panel if it's not already open
   ensureParticipantPanelOpen();
+
+  // Store the sort direction
+  isAscending = ascending;
 
   // Wait a bit for the panel to open before extracting participants
   setTimeout(() => {
@@ -170,7 +175,7 @@ function sortParticipantsByLastName() {
       return;
     }
 
-    console.log('Sorting participants:', participants.map(p => `${p.lastName}, ${p.firstName}`));
+    console.log('Sorting participants:', participants.map(p => `${p.lastName}, ${p.firstName}`), ascending ? 'ascending' : 'descending');
 
     // Clear previous state if we're re-sorting
     if (originalOrder.length > 0 && isSorted) {
@@ -197,8 +202,15 @@ function sortParticipantsByLastName() {
     // Sort by last name, then first name
     const sorted = [...participants].sort((a, b) => {
       const lastNameCompare = a.lastName.localeCompare(b.lastName);
-      if (lastNameCompare !== 0) return lastNameCompare;
-      return a.firstName.localeCompare(b.firstName);
+      const firstNameCompare = a.firstName.localeCompare(b.firstName);
+
+      if (ascending) {
+        if (lastNameCompare !== 0) return lastNameCompare;
+        return firstNameCompare;
+      } else {
+        if (lastNameCompare !== 0) return -lastNameCompare;
+        return -firstNameCompare;
+      }
     });
 
     // Get the parent container
@@ -371,11 +383,18 @@ function performSort() {
     }
   });
 
-  // Sort by last name, then first name
+  // Sort by last name, then first name (using the stored direction)
   const sorted = [...participants].sort((a, b) => {
     const lastNameCompare = a.lastName.localeCompare(b.lastName);
-    if (lastNameCompare !== 0) return lastNameCompare;
-    return a.firstName.localeCompare(b.firstName);
+    const firstNameCompare = a.firstName.localeCompare(b.firstName);
+
+    if (isAscending) {
+      if (lastNameCompare !== 0) return lastNameCompare;
+      return firstNameCompare;
+    } else {
+      if (lastNameCompare !== 0) return -lastNameCompare;
+      return -firstNameCompare;
+    }
   });
 
   // Get the parent container

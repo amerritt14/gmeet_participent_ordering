@@ -1,5 +1,5 @@
 body {
-  width: 300px;
+  width: 350px;
   min-height: 200px;
   margin: 0;
   padding: 0;
@@ -63,6 +63,12 @@ h1 {
   margin-bottom: 12px;
 }
 
+.sort-button-group {
+  display: flex;
+  gap: 0;
+  width: 100%;
+}
+
 .btn {
   padding: 10px 16px;
   border: none;
@@ -71,6 +77,18 @@ h1 {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.sort-arrow {
+  font-size: 16px;
+  font-weight: bold;
+  transition: transform 0.2s;
+  user-select: none;
 }
 
 .btn-primary {

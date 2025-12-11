@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const status = document.getElementById('status');
   const participantList = document.getElementById('participantList');
   const sortIndicator = document.getElementById('sortIndicator');
+  const sortArrow = document.getElementById('sortArrow');
+
+  let isAscending = true; // Track current sort direction
 
   // Check if we're on a Google Meet page
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -16,29 +19,57 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   sortBtn.addEventListener('click', () => {
+    // Get current sort state first
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(
         tabs[0].id,
-        { action: 'sortByLastName' },
-        (response) => {
-          if (chrome.runtime.lastError) {
-            showStatus('Error: ' + chrome.runtime.lastError.message, 'error');
-          } else if (response && response.success) {
-            showStatus('Participants sorted by last name!', 'success');
-            // Wait a bit for the DOM to update, then refresh the list
-            setTimeout(() => {
-              loadParticipants();
-              updateSortStatus();
-            }, 400);
+        { action: 'getSortState' },
+        (stateResponse) => {
+          // If already sorted, toggle the direction. Otherwise, start with ascending
+          if (stateResponse && stateResponse.isSorted) {
+            isAscending = !stateResponse.isAscending;
           } else {
-            showStatus('Failed to sort participants', 'error');
+            isAscending = true; // First sort is always ascending
           }
+
+          // Update arrow visual
+          if (isAscending) {
+            sortArrow.classList.remove('descending');
+            sortArrow.textContent = '▲';
+          } else {
+            sortArrow.classList.add('descending');
+            sortArrow.textContent = '▼';
+          }
+
+          chrome.tabs.sendMessage(
+            tabs[0].id,
+            { action: 'sortByLastName', ascending: isAscending },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                showStatus('Error: ' + chrome.runtime.lastError.message, 'error');
+              } else if (response && response.success) {
+                showStatus(`Participants sorted ${isAscending ? 'A-Z' : 'Z-A'}!`, 'success');
+                // Wait a bit for the DOM to update, then refresh the list
+                setTimeout(() => {
+                  loadParticipants();
+                  updateSortStatus();
+                }, 400);
+              } else {
+                showStatus('Failed to sort participants', 'error');
+              }
+            }
+          );
         }
       );
     });
   });
 
   restoreBtn.addEventListener('click', () => {
+    // Reset to ascending when restoring
+    isAscending = true;
+    sortArrow.classList.remove('descending');
+    sortArrow.textContent = '▲';
+
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(
         tabs[0].id,
@@ -105,8 +136,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
           if (response) {
             if (response.isSorted) {
-              sortIndicator.textContent = 'Sorted by last name';
+              const direction = response.isAscending ? 'A-Z' : 'Z-A';
+              sortIndicator.textContent = `Sorted by last name (${direction})`;
               sortIndicator.classList.add('sorted');
+
+              // Sync arrow with actual state
+              isAscending = response.isAscending;
+              if (response.isAscending) {
+                sortArrow.classList.remove('descending');
+                sortArrow.textContent = '▲';
+              } else {
+                sortArrow.classList.add('descending');
+                sortArrow.textContent = '▼';
+              }
             } else {
               sortIndicator.textContent = 'Default order';
               sortIndicator.classList.remove('sorted');
