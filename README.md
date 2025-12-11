@@ -17,6 +17,7 @@ A browser extension that sorts Google Meet participants alphabetically by last n
 
 - **Chrome Web Store**: [Coming Soon]
 - **Firefox Add-ons**: [Coming Soon]
+- **Safari**: Not available (Apple requires a $99/year developer membership for App Store distribution - see manual installation below instead)
 
 ### Manual Installation (Development)
 
@@ -36,6 +37,19 @@ A browser extension that sorts Google Meet participants alphabetically by last n
 3. Click "Load Temporary Add-on"
 4. Select the `manifest.json` file from the extension folder
 5. The extension will be loaded (temporary - removed on browser restart)
+
+#### Safari
+
+**Safari 17+ (macOS Sonoma and later)** supports loading web extensions in developer mode:
+
+1. Download or clone this repository
+2. Open **Safari**
+3. Go to **Safari → Settings → Advanced**
+4. Check **"Show features for web developers"** (or "Show Develop menu")
+5. Go to **Develop → Developer Settings**
+6. Check the Allow Unsigned Extensions option and enter your password
+7. Click the "Add Temporary Extension" button
+9. Navigate to and select the extension folder from step 1
 
 ## Usage
 
