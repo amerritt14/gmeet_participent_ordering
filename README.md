@@ -1,95 +1,89 @@
 # Google Meet Participant Sorter
 
-A browser extension that allows you to sort Google Meet participants by last name.
+A browser extension that sorts Google Meet participants alphabetically by last name with ascending or descending options.
 
 ## Features
 
-- 📋 Sort participants alphabetically by last name
-- 🔄 Restore original participant order
-- 👀 View current participant list in the extension popup
-- ⚡ Works directly on Google Meet pages
+- 📋 **Sort by Last Name** - Alphabetically sort participants A-Z or Z-A
+- ⬆️⬇️ **Toggle Sort Direction** - Click to switch between ascending and descending
+- 🔄 **Auto-Sort on Join** - Automatically re-sorts when new participants join the meeting
+- 💾 **Restore Original Order** - Return to Google Meet's default ordering anytime
+- 📊 **Visual Status Indicator** - See current sort state at a glance
+- ⚡ **No Data Collection** - All sorting happens locally in your browser
 
 ## Installation
 
-### Chrome/Edge
+### From Browser Stores
 
-1. Clone or download this repository
-2. Open Chrome/Edge and navigate to `chrome://extensions/` (or `edge://extensions/`)
-3. Enable "Developer mode" using the toggle in the top-right corner
+- **Chrome Web Store**: [Coming Soon]
+- **Firefox Add-ons**: [Coming Soon]
+
+### Manual Installation (Development)
+
+#### Chrome/Edge/Brave
+
+1. Download or clone this repository
+2. Open `chrome://extensions/` in your browser
+3. Enable "Developer mode" (top-right toggle)
 4. Click "Load unpacked"
-5. Select the `gmeet_participent_ordering` folder
-6. The extension icon should appear in your browser toolbar
+5. Select the extension folder
+6. The extension icon will appear in your toolbar
 
-### Firefox
+#### Firefox/Zen
 
-1. Clone or download this repository
-2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
+1. Download or clone this repository
+2. Open `about:debugging#/runtime/this-firefox`
 3. Click "Load Temporary Add-on"
-4. Navigate to the `gmeet_participent_ordering` folder and select the `manifest.json` file
-5. The extension will be loaded temporarily
-
-**Note:** For Firefox, you'll need to reload the extension each time you restart the browser. For a permanent installation, you'll need to sign the extension through Mozilla's Add-on Developer Hub.
+4. Select the `manifest.json` file from the extension folder
+5. The extension will be loaded (temporary - removed on browser restart)
 
 ## Usage
 
-1. Join a Google Meet meeting
-2. Open the participant list in Google Meet (click the "People" icon)
-3. Click the extension icon in your browser toolbar
-4. Click "Sort by Last Name" to alphabetically sort participants by their last name
-5. Click "Restore Original Order" to return to the default ordering
+1. **Join a Google Meet** - Open any Google Meet meeting
+2. **Click the Extension Icon** - Opens the control panel
+3. **Click "Sort by Last Name"** - Sorts participants A-Z (ascending)
+4. **Click Again** - Toggles to Z-A (descending)
+5. **Restore Anytime** - Click "Restore Original Order" to undo sorting
+
+The extension automatically opens the participant panel if it's closed and re-sorts the list when new people join.
 
 ## How It Works
 
 The extension:
-- Monitors Google Meet pages for participant information
-- Extracts participant names from the DOM
-- Parses names into first and last names
-- Reorders the participant list elements in the DOM when you click sort
-- Stores the original order so you can restore it
+- Reads participant names from the Google Meet participant list (already visible on screen)
+- Parses names into first and last components
+- Reorders the DOM elements to display participants in sorted order
+- Monitors for new participants and automatically re-sorts
+- Stores the original order to allow restoration
 
-## Development
-
-### Project Structure
-
-```
-gmeet_participent_ordering/
-├── manifest.json       # Extension configuration
-├── content.js         # Content script that runs on Meet pages
-├── popup.html         # Extension popup UI
-├── popup.css          # Popup styling
-├── popup.js           # Popup logic
-├── icons/             # Extension icons (placeholder)
-└── README.md          # This file
-```
-
-### Adding Icons
-
-The extension currently references placeholder icons. To add real icons:
-
-1. Create PNG images in these sizes: 16x16, 48x48, and 128x128 pixels
-2. Save them as `icon16.png`, `icon48.png`, and `icon128.png` in the `icons/` folder
-
-You can create simple icons using any graphics editor, or generate them online.
+**Privacy:** No data is collected, stored, or transmitted. All operations happen entirely within your browser.
 
 ## Troubleshooting
 
-**Participants not showing up:**
-- Make sure the participant list is open in Google Meet
-- Google may update their DOM structure; the extension may need updates to work with new versions
-
-**Extension not working:**
-- Make sure you're on a `meet.google.com` URL
+**Participants not showing:**
+- Ensure you're on an active Google Meet call (`meet.google.com`)
+- The extension will automatically open the participant panel
 - Try refreshing the Google Meet page
-- Check the browser console for errors (right-click → Inspect → Console)
 
-**Sort not persisting:**
-- The sort is visual only and resets when participants join/leave
-- You may need to click sort again after the participant list updates
+**Sort not working:**
+- Google may update their interface; extension updates may be needed
+- Check browser console for errors (F12 → Console tab)
+
+**Extension not appearing:**
+- Make sure you're on a `meet.google.com` URL
+- Reload the extension from the browser's extension management page
 
 ## Contributing
 
-Feel free to open issues or submit pull requests with improvements!
+Contributions are welcome! Feel free to:
+- Report bugs or issues
+- Suggest new features
+- Submit pull requests
 
 ## License
 
-MIT License - feel free to use and modify as needed.
+MIT License - See [LICENSE](LICENSE) file for details
+
+## Support
+
+For issues or questions, please open an issue on the [GitHub repository](https://github.com/amerritt14/gmeet_participent_ordering).
