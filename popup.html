@@ -3,29 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <title>Meet Participant Sorter</title>
-  <link rel="stylesheet" href="popup.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 12px 16px;
+      width: 200px;
+      font-family: 'Google Sans', Roboto, sans-serif;
+      background: #202124;
+      color: #e8eaed;
+    }
+    h1 {
+      font-size: 14px;
+      font-weight: 500;
+      margin: 0 0 12px;
+      color: #e8eaed;
+    }
+    #status {
+      font-size: 12px;
+      color: #9aa0a6;
+      margin-bottom: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    #toggleBtn {
+      background: #8ab4f8;
+      color: #202124;
+      font-weight: 500;
+    }
+    #toggleBtn.active {
+      background: #f28b82;
+      color: #202124;
+    }
+    #error {
+      font-size: 12px;
+      color: #f28b82;
+      margin-top: 8px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Participant Sorter</h1>
-    <div id="sortStatus" class="sort-status">
-      <span class="status-label">Current sort:</span>
-      <span id="sortIndicator" class="status-value">Default order</span>
-    </div>
-    <div class="controls">
-      <div class="sort-button-group">
-        <button id="sortBtn" class="btn btn-primary">
-          <span>Sort by Last Name</span>
-          <span id="sortArrow" class="sort-arrow">▲</span>
-        </button>
-      </div>
-      <button id="restoreBtn" class="btn btn-secondary">
-        Restore Original Order
-      </button>
-    </div>
-    <div id="status" class="status"></div>
-    <div id="participantList" class="participant-list"></div>
-  </div>
+  <h1>Participant Sorter</h1>
+  <div id="status">Loading...</div>
+  <button id="toggleBtn">Show Sorted Panel</button>
+  <div id="error"></div>
   <script src="popup.js"></script>
 </body>
 </html>

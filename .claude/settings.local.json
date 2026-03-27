@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(grep -oP 'aria-label=\"\"\"\"[^\"\"\"\"]{3,60}\"\"\"\"' /Users/andrewmerritt/Projects/Rust/gmeet_participent_ordering/gmeet_source.html)",
+      "Bash(grep -oE 'aria-label=\"\"\"\"[^\"\"\"\"]{3,60}\"\"\"\"' /Users/andrewmerritt/Projects/Rust/gmeet_participent_ordering/gmeet_source.html)",
+      "Bash(grep -oE 'data-participant[^\"\"\"\"=]{0,30}' /Users/andrewmerritt/Projects/Rust/gmeet_participent_ordering/gmeet_source.html)",
+      "Bash(node --check /Users/andrewmerritt/Projects/Rust/gmeet_participent_ordering/content.js)",
+      "Bash(xxd)"
+    ]
+  }
+}
