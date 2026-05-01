@@ -222,11 +222,29 @@ function showPanel() {
   if (!panelElement) createPanel();
   panelElement.style.display = 'flex';
   panelVisible = true;
-  updatePanel();
+  ensurePeoplePanelOpen();
+  // Delay first update slightly so Meet's panel can render after opening
+  setTimeout(updatePanel, 800);
   // Poll every 4s as a fallback for cases the observer misses
   if (!updateTimer) {
     updateTimer = setInterval(updatePanel, 4000);
   }
+}
+
+function findPeopleButton() {
+  const nav9xe = document.querySelector('[jsname="nav9Xe"]');
+  return nav9xe ? nav9xe.closest('[role="button"][aria-haspopup="dialog"]') : null;
+}
+
+function ensurePeoplePanelOpen() {
+  // If the participant list is already populated, nothing to do
+  if (document.querySelector('[role="listitem"][aria-label][data-participant-id]')) return false;
+  const btn = findPeopleButton();
+  if (btn && btn.getAttribute('aria-expanded') !== 'true') {
+    btn.click();
+    return true; // we clicked — caller should wait for panel to render
+  }
+  return false;
 }
 
 function hidePanel() {
@@ -243,8 +261,12 @@ function getParticipantCount() {
 
 function updatePanel() {
   if (!panelVisible) return;
-  const participants = collectParticipants();
-  renderList(participants);
+  if (ensurePeoplePanelOpen()) {
+    // Panel was closed and we just opened it — wait for Meet to render the list
+    setTimeout(updatePanel, 800);
+    return;
+  }
+  renderList(collectParticipants());
 }
 
 function applyItemStyle(item, name, inCall) {
@@ -253,11 +275,14 @@ function applyItemStyle(item, name, inCall) {
   item.style.color = selected ? '#ffffff' : '#e8eaed';
   item.style.fontWeight = selected ? '500' : 'normal';
 
-  // Update presence dot
+  // Update presence dot: green = in call, yellow = waiting to join
   const dot = item.querySelector('.gmps-dot');
   if (dot) {
-    dot.style.background = inCall ? '#34a853' : '#ea4335';
-    dot.title = inCall ? 'In the call' : 'Not yet joined';
+    const status = item.dataset.status || (inCall ? 'in_call' : 'not_in_call');
+    dot.style.background = status === 'waiting' ? '#fbbc04' :
+                            status === 'in_call'  ? '#34a853' : '#9aa0a6';
+    dot.title = status === 'waiting'  ? 'Waiting to join' :
+                status === 'in_call'  ? 'In the call' : 'Not in call';
   }
 }
 
@@ -328,6 +353,7 @@ function renderList(participants) {
     }
     item.dataset.name = p.name;
     item.dataset.inCall = p.inCall;
+    item.dataset.status = p.status || (p.inCall ? 'in_call' : 'not_in_call');
     const label = item.querySelector('span:last-child');
     if (label && label.textContent !== p.name) label.textContent = p.name;
     item.title = p.name;
@@ -348,20 +374,49 @@ function renderList(participants) {
 }
 
 function collectParticipants() {
-  const names = new Map(); // name -> {name, firstName, lastName, inCall}
+  const names = new Map(); // name -> {name, firstName, lastName, inCall, status}
 
-  document.querySelectorAll('[data-participant-id]').forEach(el => {
-    if (panelElement && panelElement.contains(el)) return;
-    const moreBtn = el.querySelector('[aria-label^="More options for "]');
-    if (!moreBtn) return;
-    const label = moreBtn.getAttribute('aria-label').replace(/^More options for /, '');
-    if (label) addName(names, label, /* inCall */ true);
-  });
+  // Primary: read from the People panel participant list.
+  // Each entry is [role="listitem"][aria-label="Name"][data-participant-id].
+  // The "In the meeting" h3 separates in-call participants from waiting ones.
+  const listitems = document.querySelectorAll(
+    '[role="listitem"][aria-label][data-participant-id]'
+  );
+
+  if (listitems.length > 0) {
+    // Find the "In the meeting" h3 to determine status.
+    // Items that follow it are in the call; items before it are waiting to join.
+    const inMeetingH3 = Array.from(document.querySelectorAll('h3')).find(
+      h3 => h3.textContent.trim() === 'In the meeting'
+    );
+
+    listitems.forEach(item => {
+      if (panelElement && panelElement.contains(item)) return;
+      const rawName = item.getAttribute('aria-label');
+      if (!rawName) return;
+      const inCall = !inMeetingH3 ||
+        !!(inMeetingH3.compareDocumentPosition(item) & Node.DOCUMENT_POSITION_FOLLOWING);
+      addName(names, rawName, inCall ? 'in_call' : 'waiting');
+    });
+  } else {
+    // Fallback: collect from video tile "More options" buttons when panel is closed.
+    document.querySelectorAll('[data-participant-id]').forEach(el => {
+      if (panelElement && panelElement.contains(el)) return;
+      const moreBtn = el.querySelector('[aria-label^="More options for "]');
+      if (!moreBtn) return;
+      const label = moreBtn.getAttribute('aria-label').replace(/^More options for /, '');
+      if (label) addName(names, label, 'in_call');
+    });
+  }
 
   return Array.from(names.values());
 }
 
-function addName(map, raw, inCall) {
+function addName(map, raw, status) {
+  // Normalise legacy boolean callers
+  if (typeof status === 'boolean') status = status ? 'in_call' : 'not_in_call';
+  if (!status) status = 'in_call';
+
   if (!raw) return;
   let name = cleanName(raw);
   if (!name || name.length < 2 || name.length > 80) return;
@@ -387,14 +442,19 @@ function addName(map, raw, inCall) {
   }
 
   if (map.has(name)) {
-    // Upgrade to inCall if confirmed by a tile; never downgrade
-    if (inCall) map.get(name).inCall = true;
+    // Upgrade status: in_call > waiting > not_in_call
+    const current = map.get(name).status;
+    if (status === 'in_call' && current !== 'in_call') {
+      map.get(name).status = 'in_call';
+      map.get(name).inCall = true;
+    }
   } else {
     map.set(name, {
       name,
       firstName: parseFirstName(name),
       lastName: parseLastName(name),
-      inCall,
+      inCall: status === 'in_call',
+      status,
     });
   }
 }
